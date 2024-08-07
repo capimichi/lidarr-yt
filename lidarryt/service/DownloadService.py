@@ -6,21 +6,29 @@ import ffmpeg
 import yt_dlp
 
 from lidarryt.client.LidarrClient import LidarrClient
+from lidarryt.helper.DownloadHelper import DownloadHelper
 from lidarryt.helper.FfmpegHelper import FfmpegHelper
 from lidarryt.helper.LidarrFsHelper import LidarrFsHelper
 from youtube_search import YoutubeSearch
 from tqdm import tqdm
 
+from lidarryt.helper.VideoSearchHelper import VideoSearchHelper
+
+
 class DownloadService:
 
     lidarr_client: LidarrClient
     lidarr_fs_helper: LidarrFsHelper
+    video_search_helper: VideoSearchHelper
+    download_helper: DownloadHelper
     audio_quality: int
     duration_threshold: int
 
-    def __init__(self, lidarr_client: LidarrClient, lidarr_fs_helper: LidarrFsHelper, audio_quality: int, duration_threshold: int):
+    def __init__(self, lidarr_client: LidarrClient, lidarr_fs_helper: LidarrFsHelper, video_search_helper: VideoSearchHelper, download_helper: DownloadHelper, audio_quality: int, duration_threshold: int):
         self.lidarr_client = lidarr_client
         self.lidarr_fs_helper = lidarr_fs_helper
+        self.video_search_helper = video_search_helper
+        self.download_helper = download_helper
         self.audio_quality = audio_quality
         self.duration_threshold = duration_threshold
 
@@ -69,52 +77,30 @@ class DownloadService:
                         # print(f"Skipping {artist_name} - {album_title} - {track_number} {track_title} as it already exists.")
                         continue
 
+                try:
+                    found_video_id = self.video_search_helper.search_on_odesli(track_title, album_title, artist_name, duration)
+                except Exception as e:
+                    found_video_id = None
 
-                search_term = f"{artist_name} {album_title} {track_title}"
+                if(found_video_id):
+                    try:
+                        self.download_helper.download_video(found_video_id, track_path)
+                    except Exception as e:
+                        pass
 
-                found_video = None
+                if(not os.path.exists(track_path)):
+                    try:
+                        found_video_id = self.video_search_helper.search_on_youtube(track_title, album_title, artist_name, duration)
+                    except Exception as e:
+                        found_video_id = None
 
-                youtube_results = YoutubeSearch(search_term, max_results=10)
-                for video in youtube_results.videos:
-                    # video_id = video['id']
-                    # video_title = video['title']
-                    video_duration_mm_ss = video['duration']
-                    video_duration_mm = int(video_duration_mm_ss.split(':')[0])
-                    video_duration_ss = int(video_duration_mm_ss.split(':')[1])
-                    video_duration_ms = (video_duration_mm * 60 + video_duration_ss) * 1000
+                    if(found_video_id):
+                        try:
+                            self.download_helper.download_video(found_video_id, track_path)
+                        except Exception as e:
+                            pass
 
-                    duration_difference = abs(duration - video_duration_ms) / 1000
-
-                    if(not found_video and duration_difference <= self.duration_threshold):
-                        found_video = video
-                        break
-
-                if not found_video:
-                    found_video = youtube_results.videos[0]
-
-                if found_video:
-
-                    track_path_template = track_path.replace('.mp3', '.%(ext)s')
-                    video_id = found_video['id']
-                    video_url = f"https://www.youtube.com/watch?v={video_id}"
-                    options = {
-                        'extract_audio': True,
-                        'audio_format': 'mp3',
-                        'audio_quality': self.audio_quality,
-                        'postprocessors': [{
-                            'key': 'FFmpegExtractAudio',
-                            'preferredcodec': 'mp3',
-                            'preferredquality': str(self.audio_quality),
-                        }],
-                        'format': 'bestaudio',
-                        # 'quiet': True,
-                        # 'noprogress': True,
-                        'outtmpl': track_path_template,
-                    }
-                    with yt_dlp.YoutubeDL(options) as ydl:
-                        ydl.download([video_url])
-
-                    # set metadata album
+                if (os.path.exists(track_path)):
                     audiofile = eyed3.load(track_path)
                     audiofile.tag.artist = artist_name
                     audiofile.tag.album = album_title
