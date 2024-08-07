@@ -12,29 +12,33 @@ class VideoSearchHelper:
 
 
     def search_on_youtube(self, track_title, album_title, artist_name, duration):
-        search_term = f"{track_title} - {album_title} - {artist_name}"
+        search_terms = [
+            f"{track_title} - {album_title} - {artist_name}",
+            f"{track_title} {artist_name}",
+        ]
 
         found_video_id = None
+        for search_term in search_terms:
 
-        youtube_results = YoutubeSearch(search_term, max_results=10)
-        for video in youtube_results.videos:
-            video_id = video['id']
-            video_title = video['title']
+            youtube_results = YoutubeSearch(search_term, max_results=10)
+            for video in youtube_results.videos:
+                video_id = video['id']
+                video_title = video['title']
 
-            # avoid live versions
-            if 'live' in video_title.lower():
-                continue
+                # avoid live versions
+                if 'live' in video_title.lower():
+                    continue
 
-            video_duration_mm_ss = video['duration']
-            video_duration_mm = int(video_duration_mm_ss.split(':')[0])
-            video_duration_ss = int(video_duration_mm_ss.split(':')[1])
-            video_duration_ms = (video_duration_mm * 60 + video_duration_ss) * 1000
+                video_duration_mm_ss = video['duration']
+                video_duration_mm = int(video_duration_mm_ss.split(':')[0])
+                video_duration_ss = int(video_duration_mm_ss.split(':')[1])
+                video_duration_ms = (video_duration_mm * 60 + video_duration_ss) * 1000
 
-            duration_difference = abs(duration - video_duration_ms) / 1000
+                duration_difference = abs(duration - video_duration_ms) / 1000
 
-            if (duration_difference <= self.youtube_duration_threshold):
-                found_video_id = video_id
-                break
+                if (duration_difference <= self.youtube_duration_threshold):
+                    found_video_id = video_id
+                    break
 
         if not found_video_id:
             return None
