@@ -45,9 +45,24 @@ class DownloadService:
             artist = self.lidarr_client.get_artist(artist_id)
             artist_name = artist['artistName']
 
+            skip = False
+            artist_tag_ids = artist['tags']
+            for tag_id in artist_tag_ids:
+                tag = self.lidarr_client.get_tag(tag_id)
+                tag_label = tag['label']
+                if tag_label == 'skipyt':
+                    skip = True
+                    break
+            if skip:
+                continue
+
             album = self.lidarr_client.get_album(album_id)
             album_release_date = album['releaseDate']
             album_release_year = album_release_date.split('-')[0]
+
+            album_monitored = album['monitored']
+            if not album_monitored:
+                continue
 
             # album_dir = self.lidarr_fs_helper.get_album_dir(artist_name, album_title, album_release_year)
 
@@ -57,6 +72,11 @@ class DownloadService:
                 track_title = track['title']
                 duration = track['duration']
                 track_number = track['trackNumber']
+                has_file = track['hasFile']
+
+                if has_file:
+                    continue
+
                 # remove letters from track number
                 track_number = int(''.join(filter(str.isdigit, track_number)))
                 disc_number = track['mediumNumber']
@@ -66,16 +86,6 @@ class DownloadService:
                     os.makedirs(album_dir)
                 track_path = self.lidarr_fs_helper.get_track_file(artist_name, album_title, album_release_year,
                                                                   track_title, disc_number, track_number)
-
-                if(os.path.exists(track_path)):
-                    audiofile = eyed3.load(track_path)
-                    if(
-                            audiofile.tag.artist == artist_name
-                            and audiofile.tag.album == album_title
-                            and audiofile.tag.title == track_title
-                    ):
-                        # print(f"Skipping {artist_name} - {album_title} - {track_number} {track_title} as it already exists.")
-                        continue
 
                 try:
                     found_video_id = self.video_search_helper.search_on_odesli(track_title, album_title, artist_name, duration)
@@ -112,4 +122,4 @@ class DownloadService:
 
                     audiofile.tag.save()
 
-                # print(f"Downloaded {artist_name} - {album_title} - {track_number} {track_title} from YouTube.")
+                print(f"Downloaded {artist_name} - {album_title} - {track_number} {track_title} from YouTube.")
