@@ -46,15 +46,22 @@ class DownloadService:
             artist_name = artist['artistName']
 
             skip = False
+            has_yt_tag = False
             artist_tag_ids = artist['tags']
             for tag_id in artist_tag_ids:
                 tag = self.lidarr_client.get_tag(tag_id)
                 tag_label = tag['label']
                 if tag_label == 'skipyt':
                     skip = True
-                    break
+                if tag_label == 'ytdl':
+                    has_yt_tag = True
+
             if skip:
                 continue
+
+            if not has_yt_tag:
+                continue
+
 
             album = self.lidarr_client.get_album(album_id)
             album_release_date = album['releaseDate']
@@ -67,8 +74,8 @@ class DownloadService:
             # album_dir = self.lidarr_fs_helper.get_album_dir(artist_name, album_title, album_release_year)
 
             tracks = self.lidarr_client.get_tracks(album_id=album_id)
-            # for track in tqdm(tracks):
-            for track in tracks:
+            for track in tqdm(tracks):
+            # for track in tracks:
                 track_title = track['title']
                 duration = track['duration']
                 track_number = track['trackNumber']
@@ -121,5 +128,4 @@ class DownloadService:
                     audiofile.tag.release_date = album_release_date
 
                     audiofile.tag.save()
-
-                print(f"Downloaded {artist_name} - {album_title} - {track_number} {track_title} from YouTube.")
+                    print(f"Downloaded {artist_name} - {album_title} - {track_number} {track_title} from YouTube.")
