@@ -14,7 +14,7 @@ class LidarrFsHelper:
 
     def get_album_dir(self, artist_name, album_title, album_release_year):
         parsed_album_title = album_title.replace("/", " ")
-        return os.path.join(self.get_artist_dir(artist_name), f"{parsed_album_title} ({album_release_year})")
+        return os.path.join(self.get_artist_dir(artist_name), f"lidarr-yt")
 
     def get_track_file(self, artist_name, album_title, album_release_year, track_title, disc_number, track_number):
         parsed_track_number = str(track_number).zfill(2)
