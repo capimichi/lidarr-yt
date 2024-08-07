@@ -32,6 +32,12 @@ class LidarrClient:
         data = response.json()
         return data
 
+    def get_tag(self, tag_id):
+        url = f"{self.base_url}/api/v1/tag/{tag_id}"
+        response = requests.get(url, headers={"X-Api-Key": self.api_key})
+        data = response.json()
+        return data
+
     def get_tracks(self, artist_id = None, album_id = None):
         if not artist_id and not album_id:
             raise ValueError("Either artist_id or album_id must be provided.")
