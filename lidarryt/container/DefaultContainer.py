@@ -7,6 +7,7 @@ from lidarryt.client.OdesliClient import OdesliClient
 from lidarryt.helper.DownloadHelper import DownloadHelper
 from lidarryt.helper.FfmpegHelper import FfmpegHelper
 from lidarryt.helper.LidarrFsHelper import LidarrFsHelper
+from lidarryt.helper.ShazamHelper import ShazamHelper
 from lidarryt.helper.VideoSearchHelper import VideoSearchHelper
 from lidarryt.service.DownloadService import DownloadService
 from lidarryt.service.LastFmService import LastFmService
@@ -41,6 +42,7 @@ class DefaultContainer:
         self.set(ItunesClient.__name__, ItunesClient())
         self.set(OdesliClient.__name__, OdesliClient())
 
+        self.set(ShazamHelper.__name__, ShazamHelper())
         self.set(LidarrFsHelper.__name__, LidarrFsHelper(lidarr_root_folder))
         self.set(DownloadHelper.__name__, DownloadHelper(youtube_audio_quality))
         self.set(VideoSearchHelper.__name__, VideoSearchHelper(
@@ -54,6 +56,7 @@ class DefaultContainer:
             self.get(LidarrFsHelper.__name__),
             self.get(VideoSearchHelper.__name__),
             self.get(DownloadHelper.__name__),
+            self.get(ShazamHelper.__name__),
             youtube_audio_quality,
             youtube_duration_threshold
         ))
