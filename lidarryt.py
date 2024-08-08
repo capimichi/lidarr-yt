@@ -1,3 +1,5 @@
+import os
+
 import click
 from dotenv import load_dotenv
 
@@ -7,6 +9,21 @@ from lidarryt.service.LastFmService import LastFmService
 from lidarryt.service.OdesliService import OdesliService
 
 load_dotenv()
+
+import logging
+
+if(not os.path.exists("var/log")):
+    os.makedirs("var/log")
+logging.basicConfig(
+    filename="var/log/app.log",
+    encoding="utf-8",
+    filemode="a",
+    format="{asctime} - {levelname} - {message}",
+    style="{",
+    level=logging.INFO,
+    datefmt="%Y-%m-%d %H:%M",
+)
+
 
 default_container = DefaultContainer.getInstance()
 
