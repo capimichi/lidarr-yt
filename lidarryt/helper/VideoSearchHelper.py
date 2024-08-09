@@ -44,13 +44,22 @@ class VideoSearchHelper:
                 # if ' live' in video_title.lower():
                 #     continue
 
-                video_duration_mm_ss = video['duration']
-                video_duration_mm = int(video_duration_mm_ss.split(':')[0])
-                video_duration_ss = int(video_duration_mm_ss.split(':')[1])
-                video_duration_ms = (video_duration_mm * 60 + video_duration_ss) * 1000
+                video_duration = video['duration']
+                time_components = video_duration.split(':')
+
+                if len(time_components) == 3:
+                    hours = int(time_components[0])
+                    minutes = int(time_components[1])
+                    seconds = int(time_components[2])
+                    video_duration_ms = ((hours * 60 + minutes) * 60 + seconds) * 1000
+                elif len(time_components) == 2:
+                    hours = 0
+                    minutes = int(time_components[0])
+                    seconds = int(time_components[1])
+                    video_duration_ms = (minutes * 60 + seconds) * 1000
 
                 # skip if video duration is more than 20 minutes
-                if video_duration_mm > 10:
+                if minutes > 10 or hours > 0:
                     continue
 
                 duration_difference = abs(duration - video_duration_ms) / 1000
