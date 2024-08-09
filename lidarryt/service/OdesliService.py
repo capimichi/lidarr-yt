@@ -4,6 +4,7 @@ import os
 import eyed3
 import ffmpeg
 import yt_dlp
+from injector import inject
 
 from lidarryt.client import LastFmClient
 from lidarryt.client.ItunesClient import ItunesClient
@@ -23,6 +24,7 @@ class OdesliService:
     audio_quality: int
     youtube_duration_threshold: int
 
+    @inject
     def __init__(self, lidarr_client: LidarrClient, odesli_client: OdesliClient, itunes_client: ItunesClient, lidarr_fs_helper: LidarrFsHelper, audio_quality: int, youtube_duration_threshold: int):
         self.lidarr_client = lidarr_client
         self.odesli_client = odesli_client
