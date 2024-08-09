@@ -13,6 +13,7 @@ from mutagen.id3 import ID3, TIT2, TRCK, TPE1, TPE2, TALB, TYER, TCON
 
 from lidarryt.client.LidarrClient import LidarrClient
 from lidarryt.helper.DownloadHelper import DownloadHelper
+from lidarryt.helper.Eyed3Helper import Eyed3Helper
 from lidarryt.helper.FfmpegHelper import FfmpegHelper
 from lidarryt.helper.LidarrFsHelper import LidarrFsHelper
 from youtube_search import YoutubeSearch
@@ -33,15 +34,18 @@ class DownloadService:
     video_search_helper: VideoSearchHelper
     download_helper: DownloadHelper
     shazam_helper: ShazamHelper
+    eyed3_helper: Eyed3Helper
 
     @inject
-    def __init__(self, lidarr_client: LidarrClient, lidarr_fs_helper: LidarrFsHelper,
-                 video_search_helper: VideoSearchHelper, download_helper: DownloadHelper, shazam_helper: ShazamHelper):
+    def __init__(self, lidarr_client: LidarrClient, lidarr_fs_helper: LidarrFsHelper, video_search_helper: VideoSearchHelper,
+                    download_helper: DownloadHelper, shazam_helper: ShazamHelper, eyed3_helper: Eyed3Helper):
         self.lidarr_client = lidarr_client
         self.lidarr_fs_helper = lidarr_fs_helper
         self.video_search_helper = video_search_helper
         self.download_helper = download_helper
         self.shazam_helper = shazam_helper
+        self.eyed3_helper = eyed3_helper
+
 
     def download(self):
 
@@ -75,12 +79,6 @@ class DownloadService:
             if not album_monitored:
                 continue
 
-            album_release = None
-            for release in album['releases']:
-                if release['monitored']:
-                    album_release = release
-                    break
-
             apple_album_data = self.video_search_helper.search_album_data(album_title, artist_name)
             apple_tracks = apple_album_data['tracks']
 
@@ -98,17 +96,12 @@ class DownloadService:
 
                 apple_track = apple_tracks[track_index]
 
-                # track_number = track['trackNumber']
                 track_number = track_index + 1
                 track['absoluteTrackNumber'] = track_number
                 has_file = track['hasFile']
 
                 if has_file:
                     continue
-
-                # remove letters from track number
-                # track_number = int(''.join(filter(str.isdigit, track_number)))
-                disc_number = track['mediumNumber']
 
                 album_dir = self.lidarr_fs_helper.get_lidarr_album_dir(album)
                 if not os.path.exists(album_dir):
@@ -117,7 +110,6 @@ class DownloadService:
 
                 logging.info(f"Downloading {artist_name} - {album_title} - {track_number} {track_title} from YouTube.")
 
-                # first let's search the song on odesli
                 try:
                     apple_preview_url = apple_track['audio']['contentUrl']
                 except Exception as e:
@@ -208,26 +200,5 @@ class DownloadService:
                                     os.rename(file_path, track_path)
 
                 if (os.path.exists(track_path)):
-                    # audiofile:AudioFile = eyed3.load(track_path)
-                    # audiofile.tag.artist = artist_name
-                    # audiofile.tag.album = apple_album_title
-                    # audiofile.tag.album_artist = artist_name
-                    # audiofile.tag.title = apple_title
-                    # audiofile.tag.track_num = track_number
-                    # audiofile.tag.save()
-
-                    metadata = ID3(track_path)
-                    metadata.add(TIT2(encoding=3, text=apple_title))
-                    metadata.add(TRCK(encoding=3, text=str(track_number)))
-                    metadata.add(TPE1(encoding=3, text=artist_name))
-                    metadata.add(TPE2(encoding=3, text=artist_name))
-                    metadata.add(TALB(encoding=3, text=apple_album_title))
-                    metadata.add(TYER(encoding=3, text=str(album_year)))
-                    metadata.add(TCON(encoding=3, text=str(", ".join(album["genres"]))))
-                    metadata.save()
-
-                    # tmp for local env
-                    # track_path = track_path.replace("/Users/michele/navidrome", "")
-                    # self.lidarr_client.import_track(track, album, album_release, track_path)
-
-                    # print(f"Downloaded {artist_name} - {album_title} - {track_number} {track_title} from YouTube.")
+                    self.eyed3_helper.apply_track_metadata(track_path, track_title, track_number, artist_name, album_title,
+                                                           album_year, album, tracks)
