@@ -1,12 +1,15 @@
 import base64
 import json
 import os
+from datetime import datetime
 
 import eyed3
 import ffmpeg
 import requests
 import yt_dlp
+from eyed3 import AudioFile
 from injector import inject
+from mutagen.id3 import ID3, TIT2, TRCK, TPE1, TPE2, TALB, TYER, TCON
 
 from lidarryt.client.LidarrClient import LidarrClient
 from lidarryt.helper.DownloadHelper import DownloadHelper
@@ -25,7 +28,6 @@ from shazamio import Shazam
 
 
 class DownloadService:
-
     lidarr_client: LidarrClient
     lidarr_fs_helper: LidarrFsHelper
     video_search_helper: VideoSearchHelper
@@ -33,7 +35,8 @@ class DownloadService:
     shazam_helper: ShazamHelper
 
     @inject
-    def __init__(self, lidarr_client: LidarrClient, lidarr_fs_helper: LidarrFsHelper, video_search_helper: VideoSearchHelper, download_helper: DownloadHelper, shazam_helper: ShazamHelper):
+    def __init__(self, lidarr_client: LidarrClient, lidarr_fs_helper: LidarrFsHelper,
+                 video_search_helper: VideoSearchHelper, download_helper: DownloadHelper, shazam_helper: ShazamHelper):
         self.lidarr_client = lidarr_client
         self.lidarr_fs_helper = lidarr_fs_helper
         self.video_search_helper = video_search_helper
@@ -64,14 +67,19 @@ class DownloadService:
             if not has_yt_tag:
                 continue
 
-
             album = self.lidarr_client.get_album(album_id)
-            album_release_date = album['releaseDate']
-            album_release_year = album_release_date.split('-')[0]
+            parsed_date = datetime.fromisoformat(album["releaseDate"].replace("Z", "+00:00"))
+            album_year = parsed_date.year
 
             album_monitored = album['monitored']
             if not album_monitored:
                 continue
+
+            album_release = None
+            for release in album['releases']:
+                if release['monitored']:
+                    album_release = release
+                    break
 
             apple_album_data = self.video_search_helper.search_album_data(album_title, artist_name)
             apple_tracks = apple_album_data['tracks']
@@ -85,14 +93,14 @@ class DownloadService:
                 track_title = track['title']
                 duration = track['duration']
 
-                if(track_index >= len(apple_tracks)):
+                if (track_index >= len(apple_tracks)):
                     continue
 
                 apple_track = apple_tracks[track_index]
 
                 # track_number = track['trackNumber']
-                # track_number = track['absoluteTrackNumber']
-                track_number = track_index
+                track_number = track_index + 1
+                track['absoluteTrackNumber'] = track_number
                 has_file = track['hasFile']
 
                 if has_file:
@@ -115,7 +123,7 @@ class DownloadService:
                 except Exception as e:
                     apple_preview_url = None
 
-                if(not apple_preview_url):
+                if (not apple_preview_url):
                     continue
 
                 apple_tmp_path = tempfile.mktemp()
@@ -124,7 +132,7 @@ class DownloadService:
                     f.write(apple_preview_response.content)
 
                 apple_matched_data = asyncio.run(self.shazam_helper.recognize_song(apple_tmp_path))
-                if(not "track" in apple_matched_data):
+                if (not "track" in apple_matched_data):
                     continue
 
                 os.remove(apple_tmp_path)
@@ -134,16 +142,17 @@ class DownloadService:
                 apple_album_title = ""
                 apple_title = apple_matched_track['title']
                 for section in apple_sections:
-                    if(section['type'] == 'SONG'):
+                    if (section['type'] == 'SONG'):
                         metadata_items = section['metadata']
                         for metadata_item in metadata_items:
                             metadata_title = metadata_item['title']
                             metadata_text = metadata_item['text']
-                            if(metadata_title == 'Album'):
+                            if (metadata_title == 'Album'):
                                 apple_album_title = metadata_text
 
                 try:
-                    found_video_ids = self.video_search_helper.search_on_youtube_multi(track_title, album_title, artist_name, duration)
+                    found_video_ids = self.video_search_helper.search_on_youtube_multi(track_title, album_title,
+                                                                                       artist_name, duration)
                 except Exception as e:
                     found_video_ids = []
 
@@ -173,7 +182,7 @@ class DownloadService:
                                     continue
 
                                 matched_data = asyncio.run(self.shazam_helper.recognize_song(file_path))
-                                if("track" in matched_data):
+                                if ("track" in matched_data):
                                     matched_track = matched_data['track']
                                 else:
                                     os.remove(file_path)
@@ -184,36 +193,41 @@ class DownloadService:
                                 is_right_file = matched_track['title'] == apple_title
 
                                 for section in sections:
-                                    if(section['type'] == 'SONG'):
+                                    if (section['type'] == 'SONG'):
                                         metadata_items = section['metadata']
                                         for metadata_item in metadata_items:
                                             metadata_title = metadata_item['title']
                                             metadata_text = metadata_item['text']
 
-                                            if(metadata_title == 'Album'):
-                                                if(metadata_text != apple_album_title):
+                                            if (metadata_title == 'Album'):
+                                                if (metadata_text != apple_album_title):
                                                     is_right_file = False
                                                     break
 
                                 if is_right_file:
                                     os.rename(file_path, track_path)
 
-
                 if (os.path.exists(track_path)):
-                    audiofile = eyed3.load(track_path)
-                    audiofile.tag.artist = artist_name
-                    audiofile.tag.album = apple_album_title
-                    audiofile.tag.album_artist = artist_name
-                    audiofile.tag.title = apple_title
-                    audiofile.tag.track_num = track_number
-                    # audiofile.tag.total_tracks = len(tracks)
-                    # audiofile.tag.disc_num = disc_number
-                    # audiofile.tag.release_date = album_release_date
+                    # audiofile:AudioFile = eyed3.load(track_path)
+                    # audiofile.tag.artist = artist_name
+                    # audiofile.tag.album = apple_album_title
+                    # audiofile.tag.album_artist = artist_name
+                    # audiofile.tag.title = apple_title
+                    # audiofile.tag.track_num = track_number
+                    # audiofile.tag.save()
 
+                    metadata = ID3(track_path)
+                    metadata.add(TIT2(encoding=3, text=apple_title))
+                    metadata.add(TRCK(encoding=3, text=str(track_number)))
+                    metadata.add(TPE1(encoding=3, text=artist_name))
+                    metadata.add(TPE2(encoding=3, text=artist_name))
+                    metadata.add(TALB(encoding=3, text=apple_album_title))
+                    metadata.add(TYER(encoding=3, text=str(album_year)))
+                    metadata.add(TCON(encoding=3, text=str(", ".join(album["genres"]))))
+                    metadata.save()
 
-                    audiofile.tag.save()
+                    # tmp for local env
+                    # track_path = track_path.replace("/Users/michele/navidrome", "")
+                    # self.lidarr_client.import_track(track, album, album_release, track_path)
 
-                    tmp = self.lidarr_client.get_trackfiles(artist_id, album_id)
-
-                    a = 1
                     # print(f"Downloaded {artist_name} - {album_title} - {track_number} {track_title} from YouTube.")
