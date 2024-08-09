@@ -4,6 +4,7 @@ import os
 import eyed3
 import ffmpeg
 import yt_dlp
+from injector import inject
 
 from lidarryt.client import LastFmClient
 from lidarryt.client.LidarrClient import LidarrClient
@@ -19,6 +20,7 @@ class LastFmService:
     lidarr_fs_helper: LidarrFsHelper
     audio_quality: int
 
+    @inject
     def __init__(self, lidarr_client: LidarrClient, last_fm_client: LastFmClient, lidarr_fs_helper: LidarrFsHelper, audio_quality: int):
         self.lidarr_client = lidarr_client
         self.last_fm_client = last_fm_client
