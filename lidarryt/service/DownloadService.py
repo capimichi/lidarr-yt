@@ -75,13 +75,22 @@ class DownloadService:
             if not album_monitored:
                 continue
 
-            # album_dir = self.lidarr_fs_helper.get_album_dir(artist_name, album_title, album_release_year)
+            apple_album_data = self.video_search_helper.search_album_data(album_title, artist_name)
+            apple_tracks = apple_album_data['tracks']
 
             tracks = self.lidarr_client.get_tracks(album_id=album_id)
             # for track in tqdm(tracks):
+            track_index = -1
             for track in tracks:
+                track_index += 1
                 track_title = track['title']
                 duration = track['duration']
+
+                if(track_index >= len(apple_tracks)):
+                    continue
+
+                apple_track = apple_tracks[track_index]
+
                 # track_number = track['trackNumber']
                 track_number = track['absoluteTrackNumber']
                 has_file = track['hasFile']
@@ -103,7 +112,7 @@ class DownloadService:
 
                 # first let's search the song on odesli
                 try:
-                    apple_preview_url = self.video_search_helper.search_apple_preview_on_odesli(track_title, album_title, artist_name, duration)
+                    apple_preview_url = apple_track['audio']['contentUrl']
                 except Exception as e:
                     apple_preview_url = None
 
@@ -193,10 +202,10 @@ class DownloadService:
                 if (os.path.exists(track_path)):
                     audiofile = eyed3.load(track_path)
                     audiofile.tag.artist = artist_name
-                    audiofile.tag.album = album_title
+                    audiofile.tag.album = apple_album_title
                     audiofile.tag.album_artist = artist_name
-                    audiofile.tag.title = track_title
-                    audiofile.tag.track_num = track_number
+                    audiofile.tag.title = apple_title
+                    audiofile.tag.track_num = track_index
                     # audiofile.tag.total_tracks = len(tracks)
                     # audiofile.tag.disc_num = disc_number
                     # audiofile.tag.release_date = album_release_date
