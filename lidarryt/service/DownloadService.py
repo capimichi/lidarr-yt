@@ -4,6 +4,7 @@ import os
 
 import eyed3
 import ffmpeg
+import requests
 import yt_dlp
 
 from lidarryt.client.LidarrClient import LidarrClient
@@ -54,19 +55,13 @@ class DownloadService:
             artist = self.lidarr_client.get_artist(artist_id)
             artist_name = artist['artistName']
 
-            # skip = False
             has_yt_tag = False
             artist_tag_ids = artist['tags']
             for tag_id in artist_tag_ids:
                 tag = self.lidarr_client.get_tag(tag_id)
                 tag_label = tag['label']
-                # if tag_label == 'skipyt':
-                #     skip = True
                 if tag_label == 'ytdl':
                     has_yt_tag = True
-
-            # if skip:
-            #     continue
 
             if not has_yt_tag:
                 continue
@@ -106,6 +101,39 @@ class DownloadService:
 
                 logging.info(f"Downloading {artist_name} - {album_title} - {track_number} {track_title} from YouTube.")
 
+                # first let's search the song on odesli
+                try:
+                    apple_preview_url = self.video_search_helper.search_apple_preview_on_odesli(track_title, album_title, artist_name, duration)
+                except Exception as e:
+                    apple_preview_url = None
+
+                if(not apple_preview_url):
+                    continue
+
+                apple_tmp_path = tempfile.mktemp()
+                apple_preview_response = requests.get(apple_preview_url)
+                with open(apple_tmp_path, 'wb') as f:
+                    f.write(apple_preview_response.content)
+
+                apple_matched_data = asyncio.run(self.shazam_helper.recognize_song(apple_tmp_path))
+                if(not "track" in apple_matched_data):
+                    continue
+
+                os.remove(apple_tmp_path)
+
+                apple_matched_track = apple_matched_data['track']
+                apple_sections = apple_matched_track['sections']
+                apple_album_title = ""
+                apple_title = apple_matched_track['title']
+                for section in apple_sections:
+                    if(section['type'] == 'SONG'):
+                        metadata_items = section['metadata']
+                        for metadata_item in metadata_items:
+                            metadata_title = metadata_item['title']
+                            metadata_text = metadata_item['text']
+                            if(metadata_title == 'Album'):
+                                apple_album_title = metadata_text
+
                 try:
                     found_video_ids = self.video_search_helper.search_on_youtube_multi(track_title, album_title, artist_name, duration)
                 except Exception as e:
@@ -144,11 +172,7 @@ class DownloadService:
 
                                 sections = matched_track['sections']
 
-                                source_check = track_title.lower().replace('’', '')
-                                #remove everything inside parentheses
-                                source_check = source_check.split(' (')[0]
-                                destination_check = matched_track['title'].lower().replace('’', '')
-                                is_right_file = source_check in destination_check
+                                is_right_file = matched_track['title'] == apple_title
 
                                 for section in sections:
                                     if(section['type'] == 'SONG'):
@@ -158,9 +182,7 @@ class DownloadService:
                                             metadata_text = metadata_item['text']
 
                                             if(metadata_title == 'Album'):
-                                                source_check = album_title.lower().replace('’', "'")
-                                                destination_check = metadata_text.lower().replace('’', "'")
-                                                if(not source_check in destination_check):
+                                                if(metadata_text != apple_album_title):
                                                     is_right_file = False
                                                     break
 
