@@ -1,11 +1,12 @@
 import requests
+from injector import inject
 
 
 class LastFmClient:
 
     base_url = "https://ws.audioscrobbler.com/2.0"
 
-
+    @inject
     def __init__(self, api_key):
         self.api_key = api_key
 
