@@ -5,19 +5,22 @@ import requests
 from bs4 import BeautifulSoup
 from youtube_search import YoutubeSearch
 
+from lidarryt.client.AppleMusicClient import AppleMusicClient
 from lidarryt.client.ItunesClient import ItunesClient
 from lidarryt.client.OdesliClient import OdesliClient
-
+from Levenshtein import distance
 
 class VideoSearchHelper:
 
     itunes_client: ItunesClient
     odesli_client: OdesliClient
+    apple_music_client: AppleMusicClient
     youtube_duration_threshold: int
 
-    def __init__(self, itunes_client, odesli_client, youtube_duration_threshold):
+    def __init__(self, itunes_client: ItunesClient, odesli_client: OdesliClient, apple_music_client: AppleMusicClient, youtube_duration_threshold: int):
         self.itunes_client = itunes_client
         self.odesli_client = odesli_client
+        self.apple_music_client = apple_music_client
         self.youtube_duration_threshold = youtube_duration_threshold
 
 
@@ -84,6 +87,25 @@ class VideoSearchHelper:
         if len(ids) > 0:
             return ids[0]
         return None
+
+    def search_album_data(self, album_title, artist_name):
+        search_term = f"{album_title} - {artist_name}"
+        search_data = self.itunes_client.search(search_term, entity="album")
+        results = search_data['results']
+        # filter out the results that have not wrapperType == 'collection'
+        results = [result for result in results if result['wrapperType'] == 'collection']
+        results = [result for result in results if result['collectionType'] == 'Album']
+
+        # sort results by levenstein distance of the album_title
+        results = sorted(results, key=lambda x: distance(x['collectionName'], album_title))
+        if len(results) == 0:
+            return None
+
+        collection_id = results[0]['collectionId']
+        collection_apple_music_id = self.odesli_client.get_apple_music_id(collection_id)
+        album_data = self.apple_music_client.get_album_data(collection_apple_music_id)
+
+        return album_data
 
     def search_apple_preview_on_odesli(self, track_title, album_title, artist_name, duration):
         search_term = f"{track_title} {artist_name}"
