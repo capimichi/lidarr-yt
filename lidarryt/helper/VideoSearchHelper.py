@@ -1,9 +1,19 @@
+import json
 import os
 
+import requests
+from bs4 import BeautifulSoup
 from youtube_search import YoutubeSearch
+
+from lidarryt.client.ItunesClient import ItunesClient
+from lidarryt.client.OdesliClient import OdesliClient
 
 
 class VideoSearchHelper:
+
+    itunes_client: ItunesClient
+    odesli_client: OdesliClient
+    youtube_duration_threshold: int
 
     def __init__(self, itunes_client, odesli_client, youtube_duration_threshold):
         self.itunes_client = itunes_client
@@ -52,7 +62,7 @@ class VideoSearchHelper:
             title = x['title'].lower()
             # duration_difference = x['duration_difference']
             has_keywords = ('lyric' in title) or ('official' in title)
-            has_keywords_value = 0 if has_keywords else 1
+            has_keywords_value = 0 if has_keywords else 0
             return has_keywords_value
         found_video_ids = sorted(found_video_ids, key=sort)
 
@@ -74,6 +84,49 @@ class VideoSearchHelper:
         if len(ids) > 0:
             return ids[0]
         return None
+
+    def search_apple_preview_on_odesli(self, track_title, album_title, artist_name, duration):
+        search_term = f"{track_title} {artist_name}"
+
+        search_data = self.itunes_client.search(search_term, entity="song")
+        found_track_id = None
+        results = search_data['results']
+        # filter out the results that have not wrapperType == 'track'
+        results = [result for result in results if result['wrapperType'] == 'track']
+        for result in results:
+            result_duration = result['trackTimeMillis']
+            duration_difference = abs(duration - result_duration) / 1000
+
+            if (duration_difference <= self.youtube_duration_threshold):
+                found_track_id = result['trackId']
+                break
+
+        if not found_track_id:
+            return None
+
+        apple_music_url = self.odesli_client.get_track_apple_music_url(found_track_id)
+
+        if not apple_music_url:
+            return None
+
+        apple_music_response = requests.get(apple_music_url)
+        if apple_music_response.status_code != 200:
+            return None
+
+        apple_content = apple_music_response.content
+        apple_soup = BeautifulSoup(apple_content, 'html.parser')
+
+        preview_url = None
+        # loop scripts
+        scripts = apple_soup.find_all('script')
+        for script in scripts:
+            script_text = script.text
+            if 'MusicComposition' in script_text:
+                data = json.loads(script_text)
+                if("audio" in data):
+                    preview_url = data['audio']['audio']['contentUrl']
+
+        return preview_url
 
     def search_on_odesli(self, track_title, album_title, artist_name, duration):
         search_term = f"{track_title} - {album_title} - {artist_name}"
