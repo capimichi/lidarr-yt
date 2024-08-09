@@ -6,6 +6,7 @@ import eyed3
 import ffmpeg
 import requests
 import yt_dlp
+from injector import inject
 
 from lidarryt.client.LidarrClient import LidarrClient
 from lidarryt.helper.DownloadHelper import DownloadHelper
@@ -30,17 +31,14 @@ class DownloadService:
     video_search_helper: VideoSearchHelper
     download_helper: DownloadHelper
     shazam_helper: ShazamHelper
-    audio_quality: int
-    duration_threshold: int
 
-    def __init__(self, lidarr_client: LidarrClient, lidarr_fs_helper: LidarrFsHelper, video_search_helper: VideoSearchHelper, download_helper: DownloadHelper, shazam_helper: ShazamHelper, audio_quality: int, duration_threshold: int):
+    @inject
+    def __init__(self, lidarr_client: LidarrClient, lidarr_fs_helper: LidarrFsHelper, video_search_helper: VideoSearchHelper, download_helper: DownloadHelper, shazam_helper: ShazamHelper):
         self.lidarr_client = lidarr_client
         self.lidarr_fs_helper = lidarr_fs_helper
         self.video_search_helper = video_search_helper
         self.download_helper = download_helper
         self.shazam_helper = shazam_helper
-        self.audio_quality = audio_quality
-        self.duration_threshold = duration_threshold
 
     def download(self):
 
@@ -83,6 +81,7 @@ class DownloadService:
             track_index = -1
             for track in tracks:
                 track_index += 1
+                track_id = track['id']
                 track_title = track['title']
                 duration = track['duration']
 
@@ -92,7 +91,8 @@ class DownloadService:
                 apple_track = apple_tracks[track_index]
 
                 # track_number = track['trackNumber']
-                track_number = track['absoluteTrackNumber']
+                # track_number = track['absoluteTrackNumber']
+                track_number = track_index
                 has_file = track['hasFile']
 
                 if has_file:
@@ -102,11 +102,10 @@ class DownloadService:
                 # track_number = int(''.join(filter(str.isdigit, track_number)))
                 disc_number = track['mediumNumber']
 
-                album_dir = self.lidarr_fs_helper.get_album_dir(artist_name, album_title, album_release_year)
+                album_dir = self.lidarr_fs_helper.get_lidarr_album_dir(album)
                 if not os.path.exists(album_dir):
                     os.makedirs(album_dir)
-                track_path = self.lidarr_fs_helper.get_track_file(artist_name, album_title, album_release_year,
-                                                                  track_title, disc_number, track_number)
+                track_path = self.lidarr_fs_helper.get_lidarr_track_file(album, track)
 
                 logging.info(f"Downloading {artist_name} - {album_title} - {track_number} {track_title} from YouTube.")
 
@@ -158,6 +157,7 @@ class DownloadService:
                             os.remove(os.path.join(tmpdirname, file))
 
                         try:
+                            logging.info(f"Trying with video id: '{found_video_id}'")
                             self.download_helper.download_multiple_video([found_video_id], tmpdirname)
                         except yt_dlp.DownloadError as e:
                             continue
@@ -205,11 +205,15 @@ class DownloadService:
                     audiofile.tag.album = apple_album_title
                     audiofile.tag.album_artist = artist_name
                     audiofile.tag.title = apple_title
-                    audiofile.tag.track_num = track_index
+                    audiofile.tag.track_num = track_number
                     # audiofile.tag.total_tracks = len(tracks)
                     # audiofile.tag.disc_num = disc_number
                     # audiofile.tag.release_date = album_release_date
 
 
                     audiofile.tag.save()
+
+                    tmp = self.lidarr_client.get_trackfiles(artist_id, album_id)
+
+                    a = 1
                     # print(f"Downloaded {artist_name} - {album_title} - {track_number} {track_title} from YouTube.")
