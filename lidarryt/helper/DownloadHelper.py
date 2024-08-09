@@ -2,6 +2,7 @@ import os
 
 import eyed3
 import yt_dlp
+from injector import inject
 from youtube_search import YoutubeSearch
 
 
@@ -9,6 +10,7 @@ class DownloadHelper:
 
     audio_quality = 5
 
+    @inject
     def __init__(self, audio_quality):
         self.audio_quality = audio_quality
 
