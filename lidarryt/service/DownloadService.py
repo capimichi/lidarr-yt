@@ -10,8 +10,10 @@ import yt_dlp
 from eyed3 import AudioFile
 from injector import inject
 from mutagen.id3 import ID3, TIT2, TRCK, TPE1, TPE2, TALB, TYER, TCON
+from pydub import AudioSegment
 
 from lidarryt.client.LidarrClient import LidarrClient
+from lidarryt.helper.AudioHelper import AudioHelper
 from lidarryt.helper.DownloadHelper import DownloadHelper
 from lidarryt.helper.Eyed3Helper import Eyed3Helper
 from lidarryt.helper.FfmpegHelper import FfmpegHelper
@@ -21,11 +23,14 @@ from tqdm import tqdm
 import tempfile
 
 from lidarryt.helper.ShazamHelper import ShazamHelper
+from lidarryt.helper.SongRecognizeHelper import SongRecognizeHelper
 from lidarryt.helper.VideoSearchHelper import VideoSearchHelper
 import logging
 
 import asyncio
 from shazamio import Shazam
+
+from lidarryt.model.ShazamData import ShazamData
 
 
 class DownloadService:
@@ -33,24 +38,46 @@ class DownloadService:
     lidarr_fs_helper: LidarrFsHelper
     video_search_helper: VideoSearchHelper
     download_helper: DownloadHelper
-    shazam_helper: ShazamHelper
     eyed3_helper: Eyed3Helper
+    audio_helper: AudioHelper
+    song_recognize_helper: SongRecognizeHelper
 
     @inject
-    def __init__(self, lidarr_client: LidarrClient, lidarr_fs_helper: LidarrFsHelper, video_search_helper: VideoSearchHelper,
-                    download_helper: DownloadHelper, shazam_helper: ShazamHelper, eyed3_helper: Eyed3Helper):
+    def __init__(self, lidarr_client: LidarrClient, lidarr_fs_helper: LidarrFsHelper,
+                 video_search_helper: VideoSearchHelper,
+                 download_helper: DownloadHelper, eyed3_helper: Eyed3Helper,
+                 audio_helper: AudioHelper,
+                    song_recognize_helper: SongRecognizeHelper
+                 ):
         self.lidarr_client = lidarr_client
         self.lidarr_fs_helper = lidarr_fs_helper
         self.video_search_helper = video_search_helper
         self.download_helper = download_helper
-        self.shazam_helper = shazam_helper
         self.eyed3_helper = eyed3_helper
-
+        self.audio_helper = audio_helper
+        self.song_recognize_helper = song_recognize_helper
 
     def download(self):
 
-        missing_tracks = self.lidarr_client.get_missing_tracks()
-        album_records = missing_tracks['records']
+        album_records = []
+        missing_track_record_ids = []
+
+        page = 1
+        while True:
+            missing_track_page = self.lidarr_client.get_missing_tracks(page=page, page_size=10)
+            missing_track_page_records = missing_track_page['records']
+            has_new = False
+
+            for missing_track in missing_track_page_records:
+                missing_track_id = missing_track['id']
+                if missing_track_id not in missing_track_record_ids:
+                    album_records.append(missing_track)
+                    missing_track_record_ids.append(missing_track_id)
+                    has_new = True
+
+            page += 1
+            if not has_new:
+                break
 
         for album in album_records:
             album_id = album['id']
@@ -108,6 +135,9 @@ class DownloadService:
                     os.makedirs(album_dir)
                 track_path = self.lidarr_fs_helper.get_lidarr_track_file(album, track)
 
+                if(os.path.exists(track_path)):
+                    continue
+
                 logging.info(f"Downloading {artist_name} - {album_title} - {track_number} {track_title} from YouTube.")
 
                 try:
@@ -118,29 +148,12 @@ class DownloadService:
                 if (not apple_preview_url):
                     continue
 
-                apple_tmp_path = tempfile.mktemp()
-                apple_preview_response = requests.get(apple_preview_url)
-                with open(apple_tmp_path, 'wb') as f:
-                    f.write(apple_preview_response.content)
-
-                apple_matched_data = asyncio.run(self.shazam_helper.recognize_song(apple_tmp_path))
-                if (not "track" in apple_matched_data):
+                apple_matched_item: ShazamData = self.song_recognize_helper.advanced_recognize_song_from_url(apple_preview_url, preferred_matches=3)
+                if (not apple_matched_item or not apple_matched_item.has_track()):
                     continue
 
-                os.remove(apple_tmp_path)
-
-                apple_matched_track = apple_matched_data['track']
-                apple_sections = apple_matched_track['sections']
-                apple_album_title = ""
-                apple_title = apple_matched_track['title']
-                for section in apple_sections:
-                    if (section['type'] == 'SONG'):
-                        metadata_items = section['metadata']
-                        for metadata_item in metadata_items:
-                            metadata_title = metadata_item['title']
-                            metadata_text = metadata_item['text']
-                            if (metadata_title == 'Album'):
-                                apple_album_title = metadata_text
+                apple_title = apple_matched_item.get_title()
+                apple_album_title = apple_matched_item.get_album()
 
                 try:
                     found_video_ids = self.video_search_helper.search_on_youtube_multi(track_title, album_title,
@@ -173,32 +186,24 @@ class DownloadService:
                                     os.remove(file_path)
                                     continue
 
-                                matched_data = asyncio.run(self.shazam_helper.recognize_song(file_path))
-                                if ("track" in matched_data):
-                                    matched_track = matched_data['track']
-                                else:
+                                matched_data = self.song_recognize_helper.advanced_recognize_song(file_path, preferred_matches=3)
+                                if(not matched_data or not matched_data.has_track()):
                                     os.remove(file_path)
                                     continue
 
-                                sections = matched_track['sections']
+                                is_right_file = matched_data.get_title() == apple_title
 
-                                is_right_file = matched_track['title'] == apple_title
-
-                                for section in sections:
-                                    if (section['type'] == 'SONG'):
-                                        metadata_items = section['metadata']
-                                        for metadata_item in metadata_items:
-                                            metadata_title = metadata_item['title']
-                                            metadata_text = metadata_item['text']
-
-                                            if (metadata_title == 'Album'):
-                                                if (metadata_text != apple_album_title):
-                                                    is_right_file = False
-                                                    break
+                                matched_album_title = matched_data.get_album()
+                                if (matched_album_title != apple_album_title):
+                                    is_right_file = False
 
                                 if is_right_file:
+                                    logging.info(f"Matched {artist_name} - {album_title} - {track_number} {track_title} with '{found_video_id}'")
                                     os.rename(file_path, track_path)
 
                 if (os.path.exists(track_path)):
-                    self.eyed3_helper.apply_track_metadata(track_path, track_title, track_number, artist_name, album_title,
+                    self.eyed3_helper.apply_track_metadata(track_path, track_title, track_number, artist_name,
+                                                           album_title,
                                                            album_year, album, tracks)
+
+            logging.info(f"Done downloading {artist_name} - {album_title}.")
