@@ -33,7 +33,7 @@ def cli():
 
 @cli.command()
 def download():
-    download_service: DownloadService = default_container.get(DownloadService.__name__)
+    download_service: DownloadService = default_container.get(DownloadService)
     download_service.download()
 
 @cli.command()
