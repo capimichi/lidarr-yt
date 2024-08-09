@@ -1,10 +1,13 @@
 import os
 
+from injector import inject
+
 
 class FfmpegHelper:
 
     ffmpeg_path: str = None
 
+    @inject
     def __init__(self, ffmpeg_path):
         self.ffmpeg_path = ffmpeg_path
 
