@@ -33,7 +33,8 @@ class LidarrFsHelper:
         parsed_date = datetime.fromisoformat(album["releaseDate"].replace("Z", "+00:00"))
         album_year = parsed_date.year
         album_name = album["title"]
-        album_folder = f"{album_name} ({album_year})"
+        album_str = album_name.replace("/", " ")
+        album_folder = f"{album_str} ({album_year})"
         album_dir = os.path.join(album["artist"]["path"], album_folder)
 
         # tmp for local env
@@ -47,11 +48,12 @@ class LidarrFsHelper:
         album_dir = self.get_lidarr_album_dir(album)
         artist_str = os.path.basename(album["artist"]['artistName'])
         album_name = album["title"]
+        album_str = album_name.replace("/", " ")
         title = track["title"]
-        title_str = title
+        title_str = title.replace("/", " ")
         track_number = str(track["absoluteTrackNumber"]).zfill(2)
 
-        filename = f"{artist_str} - {album_name} - {track_number} - {title_str}.{self.preferred_codec}"
+        filename = f"{artist_str} - {album_str} - {track_number} - {title_str}.{self.preferred_codec}"
         full_file_path = os.path.join(album_dir, filename)
 
         return full_file_path
