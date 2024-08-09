@@ -5,11 +5,12 @@ import requests
 
 class OdesliClient:
 
-    base_url = "https://song.link"
+    track_base_url = "https://song.link"
+    album_base_url = "https://album.link"
 
     def get_track_youtube_id(self, id):
         str_id = str(id)
-        url = f"{self.base_url}/i/{str_id}"
+        url = f"{self.track_base_url}/i/{str_id}"
         response = requests.get(url)
         soup = BeautifulSoup(response.text, 'html.parser')
 
@@ -23,9 +24,20 @@ class OdesliClient:
 
         return youtube_id
 
-    def get_track_apple_music_url(self, id):
+    def get_apple_music_id(self, id):
+        url = self.get_track_apple_music_url(id, type="album")
+        # remove after the question mark
+        apple_music_id = url.split("?")[0]
+        apple_music_id = apple_music_id.split("/")[-1]
+
+        return apple_music_id
+
+    def get_track_apple_music_url(self, id, type="track"):
         str_id = str(id)
-        url = f"{self.base_url}/i/{str_id}"
+        if(type == 'track'):
+            url = f"{self.track_base_url}/i/{str_id}"
+        else:
+            url = f"{self.album_base_url}/i/{str_id}"
         response = requests.get(url)
         soup = BeautifulSoup(response.text, 'html.parser')
 
