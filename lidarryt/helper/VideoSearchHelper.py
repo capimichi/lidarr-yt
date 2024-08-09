@@ -106,6 +106,15 @@ class VideoSearchHelper:
         # filter out the results that have not wrapperType == 'collection'
         results = [result for result in results if result['wrapperType'] == 'collection']
         results = [result for result in results if result['collectionType'] == 'Album']
+        results = [result for result in results if result['artistName'] == artist_name]
+
+        if not "(" in album_title:
+            tmp_results = []
+            for result in results:
+                # remove part inside round brackets from collectionName
+                result['collectionName'] = result['collectionName'].split('(')[0].strip()
+                tmp_results.append(result)
+            results = tmp_results
 
         # sort results by levenstein distance of the album_title
         results = sorted(results, key=lambda x: distance(x['collectionName'], album_title))
