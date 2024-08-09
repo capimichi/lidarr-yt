@@ -16,7 +16,7 @@ class DownloadHelper:
 
     def download_multiple_video(self, ids, dir):
         urls = [f"https://www.youtube.com/watch?v={id}" for id in ids]
-        track_path_template = "%(id)s.%(ext)s"
+        track_path_template = "%(timestamp)s.%(ext)s"
         track_path_template = os.path.join(dir, track_path_template)
         options = {
             'extract_audio': True,
