@@ -1,5 +1,6 @@
 import os
 
+from lidarryt.client.AppleMusicClient import AppleMusicClient
 from lidarryt.client.ItunesClient import ItunesClient
 from lidarryt.client.LastFmClient import LastFmClient
 from lidarryt.client.LidarrClient import LidarrClient
@@ -41,6 +42,7 @@ class DefaultContainer:
         self.set(LastFmClient.__name__, LastFmClient(last_fm_api_key))
         self.set(ItunesClient.__name__, ItunesClient())
         self.set(OdesliClient.__name__, OdesliClient())
+        self.set(AppleMusicClient.__name__, AppleMusicClient())
 
         self.set(ShazamHelper.__name__, ShazamHelper())
         self.set(LidarrFsHelper.__name__, LidarrFsHelper(lidarr_root_folder))
@@ -48,6 +50,7 @@ class DefaultContainer:
         self.set(VideoSearchHelper.__name__, VideoSearchHelper(
             self.get(ItunesClient.__name__),
             self.get(OdesliClient.__name__),
+            self.get(AppleMusicClient.__name__),
             youtube_duration_threshold
         ))
 
