@@ -8,7 +8,7 @@ class ItunesClient:
     base_url = "https://itunes.apple.com"
 
 
-    def search(self, search_term):
+    def search(self, search_term, entity="song, album, podcast"):
 
         # if search_term contains spaces, replace them with %20
         search_term = search_term.replace(" ", "%20")
@@ -16,7 +16,7 @@ class ItunesClient:
         query_params = {
             "term": search_term,
             "country": "US",
-            "entity": "song, album, podcast",
+            "entity": entity,
             "callback": "__jp61",
         }
 
