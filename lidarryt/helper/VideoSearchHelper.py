@@ -3,6 +3,7 @@ import os
 
 import requests
 from bs4 import BeautifulSoup
+from injector import inject
 from youtube_search import YoutubeSearch
 
 from lidarryt.client.AppleMusicClient import AppleMusicClient
@@ -17,6 +18,7 @@ class VideoSearchHelper:
     apple_music_client: AppleMusicClient
     youtube_duration_threshold: int
 
+    @inject
     def __init__(self, itunes_client: ItunesClient, odesli_client: OdesliClient, apple_music_client: AppleMusicClient, youtube_duration_threshold: int):
         self.itunes_client = itunes_client
         self.odesli_client = odesli_client
