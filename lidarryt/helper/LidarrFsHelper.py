@@ -53,7 +53,7 @@ class LidarrFsHelper:
         track_number = str(track_number).zfill(2)
         disc_number = str(disc_number).zfill(2)
 
-        filename = f"{artist_str} - {album_str} - {disc_number} - {track_number} - {title_str}.{self.preferred_codec}"
+        filename = f"{artist_str} - {album_str} - {disc_number}x{track_number} - {title_str}.{self.preferred_codec}"
         full_file_path = os.path.join(album_dir, filename)
 
         return full_file_path
