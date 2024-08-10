@@ -29,7 +29,7 @@ class VideoSearchHelper:
     def search_on_youtube_multi(self, track_title, album_title, artist_name, duration):
         search_terms = [
             f"{track_title} {artist_name}",
-            f"{track_title} - {album_title} - {artist_name}",
+            # f"{track_title} - {album_title} - {artist_name}",
         ]
 
         found_video_ids = []
