@@ -107,45 +107,39 @@ class DownloadService:
                 continue
 
             apple_album_data = self.video_search_helper.search_album_data(album_title, artist_name)
-            apple_tracks = apple_album_data['tracks']
+            apple_tracks = apple_album_data.get_tracks()
 
-            tracks = self.lidarr_client.get_tracks(album_id=album_id)
+            disc_count = apple_album_data.get_disc_count()
+            # tracks = self.lidarr_client.get_tracks(album_id=album_id)
             # for track in tqdm(tracks):
             track_index = -1
-            for track in tracks:
+            for track in apple_tracks:
                 track_index += 1
-                track_id = track['id']
-                track_title = track['title']
-                duration = track['duration']
+                track_title = track.get_title()
+                duration = track.get_duration()
+                disc_number = track.get_disc_number()
 
-                if (track_index >= len(apple_tracks)):
-                    continue
-
-                apple_track = apple_tracks[track_index]
-
-                track_number = track_index + 1
-                track['absoluteTrackNumber'] = track_number
-                has_file = track['hasFile']
-
-                if has_file:
-                    continue
+                track_number = track.get_track_number()
+                # has_file = track['hasFile']
+                # if has_file:
+                #     continue
 
                 album_dir = self.lidarr_fs_helper.get_lidarr_album_dir(album)
                 if not os.path.exists(album_dir):
                     os.makedirs(album_dir)
-                track_path = self.lidarr_fs_helper.get_lidarr_track_file(album, track)
+                track_path = self.lidarr_fs_helper.get_lidarr_track_file(album, track_title, track_number)
 
                 if(os.path.exists(track_path)):
                     continue
 
+                if(duration < (30 * 1000)):
+                    continue
+
                 logging.info(f"Downloading {artist_name} - {album_title} - {track_number} {track_title} from YouTube.")
 
-                try:
-                    apple_preview_url = apple_track['audio']['contentUrl']
-                except Exception as e:
-                    apple_preview_url = None
+                apple_preview_url = track.get_preview_url()
 
-                if (not apple_preview_url):
+                if (len(apple_preview_url) <= 0):
                     continue
 
                 apple_matched_item: ShazamData = self.song_recognize_helper.advanced_recognize_song_from_url(apple_preview_url, preferred_matches=3)
@@ -204,6 +198,6 @@ class DownloadService:
                 if (os.path.exists(track_path)):
                     self.eyed3_helper.apply_track_metadata(track_path, track_title, track_number, artist_name,
                                                            album_title,
-                                                           album_year, album, tracks)
+                                                           album_year, album, apple_tracks, disc_number, disc_count)
 
             logging.info(f"Done downloading {artist_name} - {album_title}.")
