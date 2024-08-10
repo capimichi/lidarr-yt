@@ -14,6 +14,10 @@ class ShazamData:
         data = self.data
         return data['track']['title']
 
+    def get_subtitle(self):
+        data = self.data
+        return data['track']['subtitle']
+
     def get_album(self):
         data = self.data
         sections = data['track']['sections']
