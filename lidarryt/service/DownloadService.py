@@ -127,7 +127,7 @@ class DownloadService:
                 album_dir = self.lidarr_fs_helper.get_lidarr_album_dir(album)
                 if not os.path.exists(album_dir):
                     os.makedirs(album_dir)
-                track_path = self.lidarr_fs_helper.get_lidarr_track_file(album, track_title, track_number)
+                track_path = self.lidarr_fs_helper.get_lidarr_track_file(album, track_title, track_number, disc_number)
 
                 if(os.path.exists(track_path)):
                     continue
