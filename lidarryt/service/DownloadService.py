@@ -135,7 +135,7 @@ class DownloadService:
                 if(duration < (30 * 1000)):
                     continue
 
-                logging.info(f"Downloading {artist_name} - {album_title} - {track_number} {track_title} from YouTube.")
+                logging.info(f"Downloading {artist_name} - {album_title} - {disc_number}x{track_number} {track_title} from YouTube.")
 
                 apple_preview_url = track.get_preview_url()
 
@@ -150,7 +150,7 @@ class DownloadService:
                 apple_album_title = apple_matched_item.get_album()
 
                 try:
-                    found_video_ids = self.video_search_helper.search_on_youtube_multi(track_title, album_title,
+                    found_video_ids = self.video_search_helper.search_on_youtube_multi(apple_title, album_title,
                                                                                        artist_name, duration)
                 except Exception as e:
                     found_video_ids = []
@@ -192,7 +192,7 @@ class DownloadService:
                                     is_right_file = False
 
                                 if is_right_file:
-                                    logging.info(f"Matched {artist_name} - {album_title} - {track_number} {track_title} with '{found_video_id}'")
+                                    logging.info(f"Matched {artist_name} - {album_title} - {disc_number}x{track_number} {track_title} with '{found_video_id}'")
                                     os.rename(file_path, track_path)
 
                 if (os.path.exists(track_path)):
