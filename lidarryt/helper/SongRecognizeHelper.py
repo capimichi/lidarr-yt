@@ -24,19 +24,19 @@ class SongRecognizeHelper:
         self.audio_helper = audio_helper
         self.shazam_helper = shazam_helper
 
-    def advanced_recognize_song_from_url(self, audio_url, preferred_matches=5, delay=500) -> Optional[ShazamData]:
+    def advanced_recognize_song_from_url(self, audio_url, preferred_matches=5, delay=500, artist="", title="") -> Optional[ShazamData]:
         tmp_path = tempfile.mktemp()
 
         apple_preview_response = requests.get(audio_url)
         with open(tmp_path, 'wb') as f:
             f.write(apple_preview_response.content)
 
-        data = self.advanced_recognize_song(tmp_path, preferred_matches=preferred_matches, delay=delay)
+        data = self.advanced_recognize_song(tmp_path, preferred_matches=preferred_matches, delay=delay, artist=artist, title=title)
         os.remove(tmp_path)
 
         return data
 
-    def advanced_recognize_song(self, audio_file_path, preferred_matches=5, delay=500) -> Optional[ShazamData]:
+    def advanced_recognize_song(self, audio_file_path, preferred_matches=5, delay=500, artist="", title="") -> Optional[ShazamData]:
         # get the length of the file, split it by preferred_matches, but at least every 10 seconds, then for each part, recognize the song title, make a statistics of the most frequent title and keep it
 
         audio_length = self.audio_helper.get_audio_length(audio_file_path)
@@ -73,6 +73,12 @@ class SongRecognizeHelper:
             if (recognized_song.has_track()):
                 recognized_songs.append(recognized_song)
             os.remove(audio_tmp_path_i)
+
+            if(recognized_song.has_track() and len(title) > 0 and title.lower() in recognized_song.get_title().lower()):
+                return recognized_song
+
+            if(recognized_song.has_track() and len(artist) > 0 and artist.lower() in recognized_song.get_subtitle().lower()):
+                return recognized_song
 
         most_frequent_titles = {}
         for recognized_song in recognized_songs:
