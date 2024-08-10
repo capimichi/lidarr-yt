@@ -44,16 +44,15 @@ class LidarrFsHelper:
 
 
 
-    def get_lidarr_track_file(self, album, track):
+    def get_lidarr_track_file(self, album, track_title, track_number):
         album_dir = self.get_lidarr_album_dir(album)
         artist_str = os.path.basename(album["artist"]['artistName'])
         album_name = album["title"]
         album_str = album_name.replace("/", " ")
-        title = track["title"]
-        title_str = title.replace("/", " ")
-        track_number = str(track["absoluteTrackNumber"]).zfill(2)
+        title_str = track_title.replace("/", " ")
+        track_number = str(track_number).zfill(2)
 
-        filename = f"{artist_str} - {album_str} - {track_number} - {title_str}.{self.preferred_codec}"
+        filename = f"{artist_str} - {album_str} -  - {track_number} - {title_str}.{self.preferred_codec}"
         full_file_path = os.path.join(album_dir, filename)
 
         return full_file_path
