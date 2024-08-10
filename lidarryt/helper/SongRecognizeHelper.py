@@ -77,8 +77,8 @@ class SongRecognizeHelper:
             if(recognized_song.has_track() and len(title) > 0 and title.lower() in recognized_song.get_title().lower()):
                 return recognized_song
 
-            if(recognized_song.has_track() and len(artist) > 0 and artist.lower() in recognized_song.get_subtitle().lower()):
-                return recognized_song
+            # if(recognized_song.has_track() and len(artist) > 0 and artist.lower() in recognized_song.get_subtitle().lower()):
+            #     return recognized_song
 
         most_frequent_titles = {}
         for recognized_song in recognized_songs:
