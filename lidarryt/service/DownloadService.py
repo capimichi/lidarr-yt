@@ -116,6 +116,7 @@ class DownloadService:
             for track in apple_tracks:
                 track_index += 1
                 track_title = track.get_title()
+                track_artist = track.get_artist_name()
                 duration = track.get_duration()
                 disc_number = track.get_disc_number()
 
@@ -142,7 +143,7 @@ class DownloadService:
                 if (len(apple_preview_url) <= 0):
                     continue
 
-                apple_matched_item: ShazamData = self.song_recognize_helper.advanced_recognize_song_from_url(apple_preview_url, preferred_matches=3)
+                apple_matched_item: ShazamData = self.song_recognize_helper.advanced_recognize_song_from_url(apple_preview_url, preferred_matches=3, title=track_title, artist=track_artist)
                 if (not apple_matched_item or not apple_matched_item.has_track()):
                     continue
 
@@ -151,7 +152,7 @@ class DownloadService:
 
                 try:
                     found_video_ids = self.video_search_helper.search_on_youtube_multi(apple_title, album_title,
-                                                                                       artist_name, duration)
+                                                                                       track_artist, duration)
                 except Exception as e:
                     found_video_ids = []
 
@@ -180,7 +181,7 @@ class DownloadService:
                                     os.remove(file_path)
                                     continue
 
-                                matched_data = self.song_recognize_helper.advanced_recognize_song(file_path, preferred_matches=3)
+                                matched_data = self.song_recognize_helper.advanced_recognize_song(file_path, preferred_matches=3, title=apple_title, artist=track_artist)
                                 if(not matched_data or not matched_data.has_track()):
                                     os.remove(file_path)
                                     continue
