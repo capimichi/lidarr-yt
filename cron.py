@@ -31,10 +31,23 @@ logging.basicConfig(
 default_container = DefaultContainer.getInstance()
 
 def download_job():
-    lock = fasteners.InterProcessLock("download.lock")
-    lock.acquire()
-    download_service: DownloadService = default_container.get(DownloadService)
-    download_service.download()
+
+    lock_path = "download.lock"
+
+    # check if download.lock is older than 10 minutes, if so, remove it
+    # if os.path.exists(lock_path):
+    #     if (time.time() - os.path.getmtime(lock_path)) > 600:
+    #         os.remove(lock_path)
+
+    lock = fasteners.InterProcessLock(lock_path)
+    try:
+        lock.acquire()
+        download_service: DownloadService = default_container.get(DownloadService)
+        download_service.download()
+    except Exception as e:
+        logging.error(f"An error occurred: {e}")
+    finally:
+        lock.release()
 
 schedule.every().minute.do(download_job)
 
