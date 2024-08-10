@@ -5,7 +5,7 @@ from mutagen.id3 import ID3, TIT2, TRCK, TPE1, TPE2, TALB, TYER, TCON
 
 class Eyed3Helper:
 
-    def apply_track_metadata(self, track_path, track_title, track_number, artist_name, album_title, album_year, album, tracks):
+    def apply_track_metadata(self, track_path, track_title, track_number, artist_name, album_title, album_year, album, tracks, disc_number, disc_count):
         metadata = ID3(track_path)
         metadata.add(TIT2(encoding=3, text=track_title))
         metadata.add(TRCK(encoding=3, text=str(track_number)))
@@ -21,5 +21,5 @@ class Eyed3Helper:
         audiofile: AudioFile = eyed3.load(track_path)
         audiofile.tag.track_num = (track_number, len(tracks))
         # set disc 1 of 1
-        audiofile.tag.disc_num = (1, 1)
+        audiofile.tag.disc_num = (disc_number, disc_count)
         audiofile.tag.save()
