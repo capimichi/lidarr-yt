@@ -35,7 +35,6 @@ class DefaultContainer:
         lidarr_api_key = os.getenv('LIDARR_API_KEY')
         lidarr_root_folder = os.getenv('LIDARR_ROOT_FOLDER')
 
-        youtube_duration_threshold = int(os.getenv('YOUTUBE_DURATION_THRESHOLD'))
         youtube_audio_quality = int(os.getenv('YOUTUBE_AUDIO_QUALITY'))
 
         last_fm_api_key = os.getenv('LASTFM_API_KEY')
