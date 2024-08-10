@@ -58,7 +58,6 @@ class DownloadService:
         self.song_recognize_helper = song_recognize_helper
 
     def download(self):
-
         album_records = []
         missing_track_record_ids = []
 
