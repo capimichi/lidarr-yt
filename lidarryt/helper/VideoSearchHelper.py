@@ -41,8 +41,8 @@ class VideoSearchHelper:
                 video_title = video['title']
 
                 # avoid live versions
-                # if ' live' in video_title.lower():
-                #     continue
+                if ' live' in video_title.lower():
+                    continue
 
                 video_duration = video['duration']
                 time_components = video_duration.split(':')
@@ -75,8 +75,8 @@ class VideoSearchHelper:
         def sort(x):
             title = x['title'].lower()
             # duration_difference = x['duration_difference']
-            has_keywords = ('lyric' in title) or ('official' in title)
-            has_keywords_value = 0 if has_keywords else 0
+            has_keywords = ('lyric' in title.lower())
+            has_keywords_value = 0 if has_keywords else 1
             return has_keywords_value
         found_video_ids = sorted(found_video_ids, key=sort)
 
