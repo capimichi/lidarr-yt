@@ -16,10 +16,11 @@ class LidarrFsHelper:
     def get_lidarr_album_dir(self, album):
         parsed_date = datetime.fromisoformat(album["releaseDate"].replace("Z", "+00:00"))
         album_year = parsed_date.year
+        artist_name = album["artist"]['artistName']
         album_name = album["title"]
         album_str = album_name.replace("/", " ")
         album_folder = f"{album_str} ({album_year})"
-        album_dir = os.path.join(album["artist"]["path"], album_folder)
+        album_dir = os.path.join(self.root_folder, artist_name, album_folder)
 
         album_dir = self.root_folder + album_dir
 
