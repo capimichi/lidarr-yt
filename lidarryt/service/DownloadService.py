@@ -165,7 +165,7 @@ class DownloadService:
                             os.remove(os.path.join(tmpdirname, file))
 
                         did_download = False
-                        for attempt in range(1, 4):
+                        for attempt in range(1, 10):
                             try:
                                 logging.info(f"Trying with video id: '{found_video_id}' - Attempt {attempt}")
                                 self.download_helper.download_multiple_video([found_video_id], tmpdirname)
