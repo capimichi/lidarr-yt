@@ -164,10 +164,17 @@ class DownloadService:
                         for file in os.listdir(tmpdirname):
                             os.remove(os.path.join(tmpdirname, file))
 
-                        try:
-                            logging.info(f"Trying with video id: '{found_video_id}'")
-                            self.download_helper.download_multiple_video([found_video_id], tmpdirname)
-                        except yt_dlp.DownloadError as e:
+                        did_download = False
+                        for attempt in range(1, 4):
+                            try:
+                                logging.info(f"Trying with video id: '{found_video_id}' - Attempt {attempt}")
+                                self.download_helper.download_multiple_video([found_video_id], tmpdirname)
+                                did_download = True
+                                break  # If download is successful, break the loop
+                            except yt_dlp.DownloadError as e:
+                                logging.error(f"An error occurred: {e}")
+
+                        if not did_download:
                             continue
 
                         # loop through downloaded files
