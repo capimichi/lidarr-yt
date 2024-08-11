@@ -1,6 +1,7 @@
 import base64
 import json
 import os
+import shutil
 from datetime import datetime
 
 import eyed3
@@ -200,7 +201,8 @@ class DownloadService:
 
                                 if is_right_file:
                                     logging.info(f"Matched {artist_name} - {album_title} - {disc_number}x{track_number} {track_title} with '{found_video_id}'")
-                                    os.rename(file_path, track_path)
+                                    shutil.copyfile(file_path, track_path)
+                                    os.remove(file_path)
 
                 if (os.path.exists(track_path)):
                     self.eyed3_helper.apply_track_metadata(track_path, track_title, track_number, artist_name,
