@@ -91,7 +91,7 @@ class DownloadService:
             for tag_id in artist_tag_ids:
                 tag = self.lidarr_client.get_tag(tag_id)
                 tag_label = tag['label']
-                if tag_label == 'ytdl':
+                if tag_label == 'lidarr-yt':
                     has_yt_tag = True
 
             if not has_yt_tag:
