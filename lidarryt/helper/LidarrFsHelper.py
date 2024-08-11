@@ -22,10 +22,7 @@ class LidarrFsHelper:
         album_folder = f"{album_str} ({album_year})"
         album_dir = os.path.join(self.root_folder, artist_name, album_folder)
 
-        album_dir = self.root_folder + album_dir
-
         return album_dir
-
 
 
     def get_lidarr_track_file(self, album, track_title, track_number, disc_number):
