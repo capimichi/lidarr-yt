@@ -1,6 +1,9 @@
 # start dockerfile from python image
 FROM python:3.10
 
+# install ffmpeg and ffprobe
+RUN apt-get update && apt-get install -y ffmpeg ffprobe
+
 # set working directory
 WORKDIR /app
 
