@@ -36,6 +36,7 @@ class DefaultContainer:
         lidarr_root_folder = os.getenv('LIDARR_ROOT_FOLDER')
 
         youtube_audio_quality = int(os.getenv('YOUTUBE_AUDIO_QUALITY'))
+        enable_proxy = os.getenv('ENABLE_PROXY') == "true"
 
         last_fm_api_key = os.getenv('LASTFM_API_KEY')
 
@@ -44,7 +45,7 @@ class DefaultContainer:
         self._injector.binder.bind(LidarrClient, LidarrClient(lidarr_base_url, lidarr_api_key))
         self._injector.binder.bind(LastFmClient, LastFmClient(last_fm_api_key))
         self._injector.binder.bind(LidarrFsHelper, LidarrFsHelper(lidarr_root_folder))
-        self._injector.binder.bind(DownloadHelper, DownloadHelper(youtube_audio_quality))
+        self._injector.binder.bind(DownloadHelper, DownloadHelper(youtube_audio_quality, enable_proxy))
 
 
 
