@@ -178,6 +178,8 @@ class DownloadService:
                         if not did_download:
                             continue
 
+                        logging.info(f"Downloaded {artist_name} - {album_title} - {disc_number}x{track_number} {track_title} with '{found_video_id}'")
+
                         # loop through downloaded files
                         for file in os.listdir(tmpdirname):
                             if file.endswith(".mp3"):
