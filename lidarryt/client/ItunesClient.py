@@ -1,4 +1,5 @@
 import json
+import urllib.parse
 
 import requests
 
@@ -11,7 +12,8 @@ class ItunesClient:
     def search(self, search_term, entity="song, album, podcast"):
 
         # if search_term contains spaces, replace them with %20
-        search_term = search_term.replace(" ", "%20")
+        # url encode the search term
+        search_term = urllib.parse.quote(search_term)
 
         query_params = {
             "term": search_term,
