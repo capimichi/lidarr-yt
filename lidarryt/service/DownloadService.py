@@ -136,7 +136,7 @@ class DownloadService:
                 if(duration < (30 * 1000)):
                     continue
 
-                logging.info(f"Downloading {artist_name} - {album_title} - {disc_number}x{track_number} {track_title} from YouTube.")
+                logging.info(f"Downloading {track_artist} - {album_title} - {disc_number}x{track_number} {apple_title} from YouTube.")
 
                 apple_preview_url = track.get_preview_url()
 
