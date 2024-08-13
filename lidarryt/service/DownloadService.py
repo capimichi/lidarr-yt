@@ -176,6 +176,8 @@ class DownloadService:
                                 break  # If download is successful, break the loop
                             except yt_dlp.DownloadError as e:
                                 logging.error(f"An error occurred: {e}")
+                                if("video is not available" in str(e)):
+                                    break
 
                         if not did_download:
                             continue
