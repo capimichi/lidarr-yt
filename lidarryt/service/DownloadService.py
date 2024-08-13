@@ -133,7 +133,7 @@ class DownloadService:
                 if(os.path.exists(track_path)):
                     continue
 
-                if(duration < (30 * 1000)):
+                if(duration < (60 * 1000)):
                     continue
 
                 logging.info(f"Downloading {artist_name} - {album_title} - {disc_number}x{track_number} {track_title}")
