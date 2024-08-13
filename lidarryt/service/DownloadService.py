@@ -136,7 +136,7 @@ class DownloadService:
                 if(duration < (30 * 1000)):
                     continue
 
-                logging.info(f"Downloading {track_artist} - {album_title} - {disc_number}x{track_number} {apple_title} from YouTube.")
+                logging.info(f"Downloading {artist_name} - {album_title} - {disc_number}x{track_number} {track_title}")
 
                 apple_preview_url = track.get_preview_url()
 
@@ -149,6 +149,8 @@ class DownloadService:
 
                 apple_title = apple_matched_item.get_title()
                 apple_album_title = apple_matched_item.get_album()
+
+                logging.info(f"Found {track_artist} - {apple_album_title} - {disc_number}x{track_number} {apple_title}")
 
                 try:
                     found_video_ids = self.video_search_helper.search_on_youtube_multi(apple_title, album_title,
