@@ -84,5 +84,10 @@ class DownloadHelper:
                     urls
                 )
         except Exception as e:
-            self.current_proxy = None
-            logging.error(f"Proxy failed: {e}")
+            error_message = str(e)
+            if("network error" in error_message.lower()):
+                self.current_proxy = None
+                logging.error(f"Proxy failed: {e}")
+            if("not a bot" in error_message.lower()):
+                self.current_proxy = None
+                logging.error(f"Proxy failed: {e}")
