@@ -12,6 +12,8 @@ class DownloadHelper:
     audio_quality = 5
     enable_proxy = False
 
+    current_proxy = None
+
     @inject
     def __init__(self, audio_quality, enable_proxy):
         self.audio_quality = audio_quality
@@ -37,7 +39,14 @@ class DownloadHelper:
             'outtmpl': track_path_template,
         }
         if(self.enable_proxy):
-            options['proxy'] = FreeProxy(rand=True, anonym=True, timeout=5).get()
+            if(self.current_proxy):
+                self.check_proxy(urls, options)
+
+            while self.current_proxy is None:
+                self.current_proxy = FreeProxy(rand=True, anonym=True, timeout=5).get()
+                self.check_proxy(urls, options)
+
+            options['proxy'] = self.current_proxy
 
         with yt_dlp.YoutubeDL(options) as ydl:
             ydl.download(
@@ -65,3 +74,13 @@ class DownloadHelper:
         with yt_dlp.YoutubeDL(options) as ydl:
             ydl.download([video_url])
 
+    def check_proxy(self, urls, options):
+        check_options = options.copy()
+        check_options['proxy'] = self.current_proxy
+        try:
+            with yt_dlp.YoutubeDL(check_options) as ydl:
+                ydl.download(
+                    urls
+                )
+        except Exception as e:
+            self.current_proxy = None
