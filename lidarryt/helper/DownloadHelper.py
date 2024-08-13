@@ -1,3 +1,4 @@
+import logging
 import os
 
 import eyed3
@@ -84,3 +85,4 @@ class DownloadHelper:
                 )
         except Exception as e:
             self.current_proxy = None
+            logging.error(f"Proxy failed: {e}")
