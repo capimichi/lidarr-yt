@@ -107,6 +107,9 @@ class DownloadService:
                 continue
 
             apple_album_data = self.video_search_helper.search_album_data(album_title, artist_name)
+            if(not apple_album_data):
+                logging.warning(f"Could not find {artist_name} - {album_title} on Apple Music.")
+                continue
             apple_tracks = apple_album_data.get_tracks()
 
             disc_count = apple_album_data.get_disc_count()
