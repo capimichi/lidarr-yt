@@ -94,5 +94,6 @@ class DownloadHelper:
             #     self.current_proxy = None
             #     logging.error(f"Proxy failed: {e}")
             # if("not a bot" in error_message.lower()):
-            self.current_proxy = None
-            logging.error(f"Proxy failed: {e}")
+            if("video is not available" not in error_message.lower()):
+                self.current_proxy = None
+                logging.error(f"Proxy failed: {e}")
