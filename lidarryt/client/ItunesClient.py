@@ -33,11 +33,11 @@ class ItunesClient:
 
         url = f"{self.base_url}/search?" + "&".join([f"{key}={value}" for key, value in query_params.items()])
 
-        proxy = {}
+        proxies = {}
         if(self.proxy_helper.is_proxy_enabled()):
-            proxy = self.proxy_helper.get_requests_proxy()
+            proxies = self.proxy_helper.get_requests_proxy()
 
-        response = requests.get(url, proxies=proxy)
+        response = requests.get(url, proxies=proxies)
 
         # remove the callback function from the response
         response_text = response.text
