@@ -101,7 +101,10 @@ class VideoSearchHelper:
 
     def search_album_data(self, album_title, artist_name):
         search_term = f"{album_title} - {artist_name}"
-        search_data = self.itunes_client.search(search_term, entity="album")
+        try:
+            search_data = self.itunes_client.search(search_term, entity="album")
+        except Exception as e:
+            return None
         results = search_data['results']
         # filter out the results that have not wrapperType == 'collection'
         results = [result for result in results if result['wrapperType'] == 'collection']
