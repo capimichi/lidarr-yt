@@ -136,14 +136,23 @@ class DownloadService:
                 if(os.path.exists(track_path)):
                     continue
 
-                if(duration < (60 * 1000)):
-                    continue
-
                 logging.info(f"Downloading {artist_name} - {album_title} - {disc_number}x{track_number} {track_title}")
 
                 apple_preview_url = track.get_preview_url()
 
                 if (len(apple_preview_url) <= 0):
+                    continue
+
+                if (duration < (60 * 1000)):
+
+                    # download the preview file into the track_path
+                    try:
+                        preview_response = requests.get(apple_preview_url)
+                        with open(track_path, 'wb') as f:
+                            f.write(preview_response.content)
+                    except Exception as e:
+                        logging.error(f"An error occurred: {e}")
+
                     continue
 
                 apple_matched_item: ShazamData = self.song_recognize_helper.advanced_recognize_song_from_url(apple_preview_url, preferred_matches=3, title=track_title, artist=track_artist)
