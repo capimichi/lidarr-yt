@@ -33,7 +33,7 @@ class ItunesClient:
 
         url = f"{self.base_url}/search?" + "&".join([f"{key}={value}" for key, value in query_params.items()])
 
-        proxy = None
+        proxy = {}
         if(self.proxy_helper.is_proxy_enabled()):
             proxy = self.proxy_helper.get_requests_proxy()
 
