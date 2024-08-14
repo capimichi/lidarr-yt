@@ -2,11 +2,20 @@ import json
 import urllib.parse
 
 import requests
+from injector import inject
+
+from lidarryt.helper.ProxyHelper import ProxyHelper
 
 
 class ItunesClient:
 
     base_url = "https://itunes.apple.com"
+
+    proxy_helper: ProxyHelper
+
+    @inject
+    def __init__(self, proxy_helper: ProxyHelper):
+        self.proxy_helper = proxy_helper
 
 
     def search(self, search_term, entity="song, album, podcast"):
@@ -23,7 +32,12 @@ class ItunesClient:
         }
 
         url = f"{self.base_url}/search?" + "&".join([f"{key}={value}" for key, value in query_params.items()])
-        response = requests.get(url)
+
+        proxy = None
+        if(self.proxy_helper.is_proxy_enabled()):
+            proxy = self.proxy_helper.get_requests_proxy()
+
+        response = requests.get(url, proxies=proxy)
 
         # remove the callback function from the response
         response_text = response.text
