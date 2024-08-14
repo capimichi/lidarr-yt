@@ -38,7 +38,14 @@ def download_job():
     except Exception as e:
         logging.error(f"An error occurred: {e}")
 
-schedule.every().hour.do(download_job)
+cron_frequency = os.getenv('CRON_FREQUENCY')
+
+if cron_frequency == 'day':
+    schedule.every().day.at("00:00").do(download_job)
+elif cron_frequency == 'hour':
+    schedule.every().hour.do(download_job)
+elif cron_frequency == 'minute':
+    schedule.every().minute.do(download_job)
 
 while 1:
     schedule.run_pending()
