@@ -34,8 +34,8 @@ class ItunesClient:
         url = f"{self.base_url}/search?" + "&".join([f"{key}={value}" for key, value in query_params.items()])
 
         proxies = {}
-        if(self.proxy_helper.is_proxy_enabled()):
-            proxies = self.proxy_helper.get_requests_proxy()
+        # if(self.proxy_helper.is_proxy_enabled()):
+        #     proxies = self.proxy_helper.get_requests_proxy()
 
         response = requests.get(url, proxies=proxies)
 
