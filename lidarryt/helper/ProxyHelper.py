@@ -21,3 +21,9 @@ class ProxyHelper:
 
     def get_proxy(self):
         return self.proxy
+
+    def get_requests_proxy(self):
+        return {
+            "http": self.proxy,
+            "https": self.proxy
+        }
